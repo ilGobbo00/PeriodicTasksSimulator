@@ -1,3 +1,15 @@
+#ifndef UTILITIES_H
+#define UTILITIES_H
+
+#include <pthread.h>
+#include <stdio.h>
+#include <time.h>
+#include <math.h>
+
+#define MAX_THREADS 256
+
+extern int active_threads;
+
 /*
     Recursive function to find mcm
 
@@ -29,3 +41,5 @@ int create_server(int);
     @param int socket for connection 
 */
 int listen(int);
+
+#endif

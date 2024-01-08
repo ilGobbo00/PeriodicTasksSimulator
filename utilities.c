@@ -1,4 +1,21 @@
-#include "orchestrator.c"
+#include "utilities.h"
+
+
+// Structs
+struct th_info {
+    unsigned long id;
+    int period;
+    int exetime;
+    int priority;
+    // float utilization;
+};
+
+struct thread {
+    struct th_info info;     // Thread info
+    pthread_t * thread;
+    int check_period;   // Count to check the execution within each period
+    int rem_time;       // Remaining time
+}threads[MAX_THREADS];
 
 int lcm(int index, int mcm){
     if(index == active_threads-1) return mcm;

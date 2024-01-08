@@ -1,26 +1,4 @@
-#include <stdio.h>
-#include <time.h>
-#include <pthread.h>
-#include <math.h>
 #include "utilities.h"
-
-#define MAX_THREADS 256
-
-// Structs
-struct th_info {
-    unsigned long id;
-    int period;
-    int exetime;
-    int priority;
-    // float utilization;
-};
-
-struct thread {
-    struct th_info info;     // Thread info
-    pthread_t * thread;
-    int check_period;   // Count to check the execution within each period
-    int rem_time;       // Remaining time
-}threads[MAX_THREADS];
 
 // Global vars
 int active_threads;
@@ -33,7 +11,7 @@ void send_data();
 
 int main(int argc, char *argv[]){
     if(argc < 2){
-        printf("Usage:\n\t%s <port>", argv[0]);
+        printf("Usage:\n\t%s <port between 1024 and 65535>\n", argv[0]);
         return 1;
     }
 
