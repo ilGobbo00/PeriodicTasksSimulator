@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
+#include <math.h>
+#include "utilities.h"
 
 #define MAX_THREADS 256
 
@@ -20,75 +22,61 @@ struct thread {
     int rem_time;       // Remaining time
 }threads[MAX_THREADS];
 
-
 // Global vars
 int active_threads;
 
-// Function declarations
+// Routines 
+void read_data();
+void store_data();
+void send_data();
 
-/*
-    Recursive function to find mcm
 
-    @param index : fist position of the array
-    @param mcm : first value 
-*/
-int lcm(int, int);
+int main(int argc, char *argv[]){
+    if(argc < 2){
+        printf("Usage:\n\t%s <port>", argv[0]);
+        return 1;
+    }
 
-int main(){
+    int port, socket;
+    sscanf(argv[1], "%d", &port);
+
+    if((socket = create_server(port)) == -1){
+        printf("Error while creating server\n");
+        return 1;
+    }
+
+    if(listen(socket) == -1){
+        printf("Error while listening for incoming connections\n");
+        return 1;
+    } 
+
     return 0;
 }
 
-/*
-    Recursive function to find mcm
 
-    @param index : fist position of the array
-    @param mcm : first value 
-*/
-int lcm(int index, int mcm){
-    if(index == active_threads-1) return mcm;
+void read_data(){
+    int computation = 2;
+    const struct timespec unit = {0,850000}; 
 
-    int b = threads[++index].info.period;
-
-    int max = (mcm > b) ? mcm : b;
-    while((max % mcm != 0) || (max % b != 0))
-        max++;
-    
-    printf("found %d\n", max);
-
-    return lcm(index, max);
+    while(computation--)
+        if(nanosleep(&unit, NULL))
+            printf("Nanosleep error: read_data\n");
 }
-/* int lcm(int index, int mcm, int b){
-    if(active_threads == 1) return threads[0].info.period;
-    if(index == active_threads-1) return mcm;
 
-    int max = (mcm > b) ? mcm : b;
-    while((max % mcm != 0) || (max % b != 0))
-        max++;
-    
-    index++;
-    return lcm(index, max, threads[index].info.period);
-} */
+void store_data(){
+    int computation = 4;
+    const struct timespec unit = {0,850000}; 
 
+    while(computation--)
+        if(nanosleep(&unit, NULL))
+            printf("Nanosleep error: store_data\n");
+}
 
+void send_data(){
+    int computation = 20;
+    const struct timespec unit = {0,850000}; 
 
-/* int mcm(){
-    // Get the minimum even value
-    int min = threads[0].info.period;
-    unsigned int mcm = 1;
-    for(int i=0; i<active_threads; i++){
-        if(threads[i].info.period % 2 == 0 && threads[i].info.period < min) 
-            min = threads[i].info.period;
-        
-        // Just to have a value
-        mcm *= threads[i].info.period;
-    }
-
-    // Find mcm
-    short found = 1;
-    for(int i=1; !found; i*=min){
-        found = 0;
-        for(int j=0; j<active_threads; j++){
-            found |= threads[j].info.period % min;
-        }
-    }
-} */
+    while(computation--)
+        if(nanosleep(&unit, NULL))
+            printf("Nanosleep error: send_data\n");
+}
