@@ -1,7 +1,5 @@
-#include "utilities.h"
-
-// Global vars
-int active_threads;
+#include "scheduling.h"
+#include "network.h"
 
 // Routines 
 void read_data();
@@ -23,11 +21,17 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    if(listen(socket) == -1){
+    if(conn_listen(port, socket) == -1){
         printf("Error while listening for incoming connections\n");
         return 1;
     } 
 
+    int active_threads = 0;
+    struct thread threads[MAX_THREADS];
+
+    // TODO once the client is connected, continue to listen for task activation/deactivation 
+
+    
     return 0;
 }
 

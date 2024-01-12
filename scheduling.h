@@ -1,5 +1,5 @@
-#ifndef UTILITIES_H
-#define UTILITIES_H
+#ifndef SCHEDULING_H
+#define SCHEDULING_H
 
 #include <pthread.h>
 #include <stdio.h>
@@ -8,7 +8,18 @@
 
 #define MAX_THREADS 256
 
-extern int active_threads;
+// Structs
+struct th_info {
+    unsigned long id;
+    int period;
+    int comptime;
+    int priority;
+};
+
+struct thread {
+    struct th_info info;    // Thread info
+    pthread_t * thread;
+};
 
 /*
     Recursive function to find mcm
@@ -24,25 +35,12 @@ extern int active_threads;
 
     @return true if the set of task is schedulable for sure
 */
-int is_RM();
+int is_RM(int, struct thread*);
 
 /*
     Function to check if the schedulability of the set of tasks
 */
 int is_schedulable(int, struct thread*);
-
-/*
-    Function to initialize and run the server
-    @param int port for listen incoming connection
-*/
-int create_server(int);
-
-/*
-    Listen for incoming connection once the server is active. 
-    It checks for the schedulability of the tasks and eventually starts new threads
-    @param int socket for connection 
-*/
-int listen(int);
 
 /*
     Function to order the threads in descending order (1 - higher, 100 - lower) with respect to their priority
