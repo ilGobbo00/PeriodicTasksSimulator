@@ -16,10 +16,12 @@ extern int active_threads;
     @param int index fist position of the array
     @param int mcm first value 
 */
-int lcm(int, int);
+// int lcm(int, int);
 
 /*
-    Function to check if a set of task is schedulable using the boundary ln(2)
+    Function to check if a set of task is schedulable using the boundary ln(2).
+    It works also with only one task active.
+
     @return true if the set of task is schedulable for sure
 */
 int is_RM();
@@ -27,7 +29,7 @@ int is_RM();
 /*
     Function to check if the schedulability of the set of tasks
 */
-int is_schedulable();
+int is_schedulable(int, struct thread*);
 
 /*
     Function to initialize and run the server
@@ -41,5 +43,10 @@ int create_server(int);
     @param int socket for connection 
 */
 int listen(int);
+
+/*
+    Function to order the threads in descending order (1 - higher, 100 - lower) with respect to their priority
+*/
+void order_ths();
 
 #endif
