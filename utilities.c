@@ -7,28 +7,12 @@ struct th_info {
     int period;
     int comptime;
     int priority;
-    // float utilization;
 };
 
 struct thread {
     struct th_info info;    // Thread info
     pthread_t * thread;
-    // int rem_time;           // Remaining time
 }threads[MAX_THREADS];
-
-// int lcm(int index, int mcm){
-//     if(index == active_threads-1) return mcm;
-
-//     int b = threads[++index].info.period;
-
-//     int max = (mcm > b) ? mcm : b;
-//     while((max % mcm != 0) || (max % b != 0))
-//         max++;
-    
-//     printf("found %d\n", max);
-
-//     return lcm(index, max);
-// }
 
 int is_RM(){
     float tot_utilization;
