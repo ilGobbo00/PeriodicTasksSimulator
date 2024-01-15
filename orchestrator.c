@@ -31,7 +31,15 @@ int receive(int sd, char *retBuf, int size)
   return 0;
 }
 // =======================
-// Checks whether the id is already used by an existing thread
+
+/*
+    Checks whether the id is already used by an existing thread
+
+    @param struct thread - the list of threads
+    @param int - number of threads
+    @param int - id to search for
+    @return 1 if it exists, 0 otherwise
+*/ 
 int existing_id(struct thread ths[], int active_th, int id);
 
 int main(int argc, char *argv[]){
@@ -50,6 +58,9 @@ int main(int argc, char *argv[]){
         "         store\n"
         "         send\n";
 
+    // threads' info
+    int period, comptime, priority, type;
+    
     // Serve a client at time
     while(1){
 
@@ -180,9 +191,6 @@ int main(int argc, char *argv[]){
         bzero(th_analysis, MAX_THREADS * sizeof(struct thread));
 
     
-
-        // TODO once the client is connected, continue to listen for task activation/deactivation 
-    
         while(!close_client){
             close_client = 0;
             ret_id = listen_for_commands(c_socket, &routine, &action);
@@ -203,24 +211,27 @@ int main(int argc, char *argv[]){
             
             // if a new thread will be started, prepare to analyse
             if(routine > CLOSE && action == START){
+                if(active_threads+1 > MAX_THREADS){
+                    printf("[i] Max number of thread reached\n");
+                    send_data(c_socket, "Function not started - max number of threads reached");
+                    continue;
+                }
                 if(existing_id(threads, active_threads, id)){
-                    // char tmp[50];
-                    // bzero(tmp, 50);
-
                     send_data(c_socket, "Function not started - id already used: Use a different id");
-                    // send_data(socket, "Existing ids:");
-                    // for(int i=0, len=0; i<active_threads; i++){
-                    //     itoa(threads[i], tmp[len], 10);
-                    //     tmp[++len] = " ";
-                    //     len += strlen(tmp);
-                    // }
-                    // send_data(socket, tmp);
                     continue;
                 }
                 memcpy(th_analysis, threads, MAX_THREADS * sizeof(struct thread));
             }
-            
 
+            if(routine > CLOSE && action == END)
+                if(!existing_id(threads, active_threads, id)){
+                    printf("[-] Thread not existing\n");
+                    send_data(c_socket, "No action performed - id does not exist");
+                    continue;
+                }
+            
+            
+            // routine and actions are correct (no further checks need to be done)
             switch(routine){
                 case CLOSE: 
                     send_data(c_socket, "bye");
@@ -231,32 +242,81 @@ int main(int argc, char *argv[]){
                     continue;
                 break;
                 case READ: 
+                    switch(action){
+                        case START:
+                            if(existing_id(threads, active_threads, id)){
+                                printf("[x] Already existing id\n");
+                                send_data(c_socket, "ID already existing");
+                                continue;
+                            }
+
+                            period = 20;
+                            comptime = 2;
+                            priority = 1;
+                            type = READ;
+
+                            struct thread new_th = {{id++, period, comptime, priority, type}};
+                            th_analysis[active_threads] = new_th;
+
+                            if(!is_schedulable(th_analysis, active_threads+1)){
+                                printf("[x] Non schedulable thread\n");
+                                send_data(c_socket, "Function not started - not schedulable thread");
+                                continue;
+                            }
+
+                            if(pthread_create(new_th.thread, NULL, &read_datac,NULL)){
+                                printf("[x] Error while creating a new thread\n");
+                                send_data(c_socket, "Function not started - error while creating a new thread");
+                                continue;
+                            }
+                            if(!pthread_setschedprio(new_th.thread, priority))
+                                printf("[!] Can't set the priority to the new thread\n");
+                            
+                            threads[active_threads++] = new_th;
+
+                        break;
+
+                        case END:
+                            int j; 
+                            for(j=0; j<active_threads && threads[j].info.id != id; j++);
+
+                            if(pthread_cancel(threads[j].thread)){
+                                printf("[!] It was not possible to stop the thread\n");
+                                send_data(c_socket, "Function not stopped - thread was not stopped due to an error");
+                                continue;
+                            }
+
+                            // Compat other active threads
+                            for(; j<active_threads-1; j++)
+                                threads[j] = threads[j+1];
+                            
+                            active_threads--;
+
+                            printf("[+] Thread correctly stopped\n");
+                            send_data(c_socket, "Function correclty stopped");
+                        break;
+
+                        default:
+                            printf("[x] thread %s: action not recognized\n", ROUTINES[READ]);
+                            send_data(c_socket, "start/end command not recognize");
+                    }
                 break;
+
                 case WRITE: 
                 break;
+
                 case SEND: 
                 break;
-                default:
-                    // TODO add default case
-                break;
-            }
 
-            
-            // // Copy(threads, th_analysis)
-            // if(is_schedulable(th_analysis)){
-            //     active_threads++;
-            //     // Create a new thread, launch it (remembre to set the correct priority)
-            //     // Respond to the client that the thread was correctly created
-            // }
-            // else{
-            //     // Respond to the client that the new thread is not added
-            //     // List all active threads to user
-            // }
+                default:
+                    printf("[-] Invalid routine\n");
+                    send_data(c_socket, "Invalid routine");
+            }
         }
 
-    
-
-        // abort_zombie()
+        // Kill all remaining zombies
+        for(int i=0; i<active_threads; i++)
+            pthread_cancel(threads[i].thread);
     }
 
     return 0;
