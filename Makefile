@@ -24,6 +24,10 @@ $(TARGET): $(OBJECTS)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
+ifeq ($(CC),gcc)
+    orchestrator.o: CFLAGS += -Wno-unknown-pragmas
+endif
+
 # Clean rule
 clean:
 	rm -f $(OBJECTS) $(TARGET)
