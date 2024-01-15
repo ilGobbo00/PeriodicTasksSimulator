@@ -83,6 +83,14 @@ int read_resp(int sd, char *buff, int maxsize){
     return read(sd, buff, rlen > maxsize ? maxsize : rlen);
 }
 
+int is_routine(char *r){
+    for(int i=0; i<N_ROUTINES; i++)
+        if(!strcmp(ROUTINES[i], r))
+            return 1;
+
+    return 0;
+}
+
 int listen_for_commands(int sd, int* routine, int* action){
     char client_comm[20];
     char r[10], a[10];
@@ -98,9 +106,10 @@ int listen_for_commands(int sd, int* routine, int* action){
     printf("[i] Log: %s\n", client_comm);
 
     // Check for syntax
-    if(strlen(client_comm) && sscanf(client_comm, "%s %s %d", r, a, &id) == -1){
+    sscanf(client_comm, "%s %s %d", r, a, &id);
+    if(strlen(client_comm) && !is_routine(r)){
         printf("Wrong client input\n");
-        return WRONG;                      // Wrong command
+            return WRONG; 
     }
 
     // Set action
