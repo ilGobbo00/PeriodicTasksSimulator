@@ -1,6 +1,6 @@
 #include "scheduling.h"
 
-int is_RM(int n_threads, struct thread* thrs){
+int is_RM(struct thread* thrs, int n_threads){
     float tot_utilization;
     
     // Get the sum of all utilizations
@@ -14,7 +14,7 @@ int is_RM(int n_threads, struct thread* thrs){
         return tot_utilization < n_threads * (pow(2, 1/n_threads) - 1);
 }
 
-void order_ths(int n_threads, struct thread* thrs){
+void order_ths(struct thread* thrs, int n_threads){
     struct thread tmp;
 
     for(int i=0; i<n_threads-1; i++)
@@ -28,7 +28,7 @@ void order_ths(int n_threads, struct thread* thrs){
         }
 }
 
-int is_schedulable(int n_threads, struct thread* thrs){
+int is_schedulable(struct thread* thrs, int n_threads){
     if(is_RM(n_threads, thrs)) return 1;   // The task set respects the U_lub
 
     order_ths(n_threads, thrs);            // Order priorities in descending order

@@ -129,13 +129,13 @@ int listen_for_commands(int sd, int* routine, int* action){
     }
 
     if(!strcmp(r, ROUTINES[READ]))
-        *routine = READ;
+        *routine = !strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END]) ?  READ : WRONG;
         
     if(!strcmp(r, ROUTINES[WRITE]))
-        *routine = WRITE;
+        *routine = !strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END]) ?  WRITE : WRONG;
 
     if(!strcmp(r, ROUTINES[SEND]))
-        *routine = SEND;
+        *routine = !strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END]) ?  SEND : WRONG;
 
-    return !strcmp(a, ACTIONS[START]) ? id : NONE;
+    return id;
 }

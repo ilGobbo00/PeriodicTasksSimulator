@@ -9,6 +9,7 @@
 #define MAX_THREADS 256
 
 // Routines
+#define N_ROUTINES 5
 enum{
     HELP,   
     CLOSE,  
@@ -17,6 +18,7 @@ enum{
     SEND,   
 };
 static const char* ROUTINES[] = {"help", "close", "read", "write", "send"};
+
 
 // Actions
 enum{
@@ -70,12 +72,19 @@ int is_RM(int, struct thread*);
 
 /*
     Function to check if the schedulability of the set of tasks
+
+    @param struct thread* array of thread(s)
+    @param int number of threads
+    @return 1 if it's schedulable, 0 otherwise
 */
-int is_schedulable(int, struct thread*);
+int is_schedulable(struct thread*, int);
 
 /*
     Function to order the threads in descending order (1 - higher, 100 - lower) with respect to their priority
+
+    @param struct thread* array of thread(s)
+    @param int number of threads
 */
-void order_ths();
+void order_ths(struct thread*, int);
 
 #endif

@@ -49,7 +49,7 @@ int read_resp(int, char*, int);
 int send_data(int, char*);
 
 /*
-    Listen for commands coming from a client already connected
+    Listen for commands coming from a client already connected. It checks for all the possible errors that may happen
     TODO aggiornare in out
     @param int socket
     @param int* represents the target routine
