@@ -8,12 +8,43 @@
 
 #define MAX_THREADS 256
 
+// Routines
+enum{
+    HELP,   
+    CLOSE,  
+    READ,   
+    WRITE,  
+    SEND,   
+};
+static const char* ROUTINES[] = {"help", "close", "read", "write", "send"};
+
+// Actions
+enum{
+    START,
+    END,
+    ERROR
+};
+static const char* ACTIONS[] = {"start", "end", "error"};
+
+// return value
+enum{
+    NONE, 
+    WRONG
+};
+
+
 // Structs
 struct th_info {
+    // Id to identify the thread
     unsigned long id;
+    // Period of the task
     int period;
+    // Time needed by the task to complete
     int comptime;
+    // Priority of the thread (0 - 100)
     int priority;
+    // Defines which taks this thread represents
+    int type; 
 };
 
 struct thread {

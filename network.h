@@ -1,6 +1,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include "scheduling.h"
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -20,13 +21,41 @@
 int create_server(int);
 
 /*
-    Listen for incoming connection once the server is active. 
-    It checks for the schedulability of the tasks and eventually starts new threads
+    Listen for incoming connection once the server is active.
 
     @param int socket for connection 
     @param int port for listening connection
     @return int -1 on error, 0 otherwise
 */
 int conn_listen(int, int);
+
+/*
+    Function to read incoming data
+
+    @param int socket
+    @param char* buffer to store read data
+    @param int amount of data to read
+    @return bytes read or -1 on error
+*/
+int read_resp(int, char*, int);
+
+/*
+    Function to send data
+
+    @param int socket
+    @param char* buffer containin data to send
+    @return int bytes sent or -1 on error
+*/
+int send_data(int, char*);
+
+/*
+    Listen for commands coming from a client already connected
+    TODO aggiornare in out
+    @param int socket
+    @param int* represents the target routine
+    @param int* represents the action (start/end)
+    @return int -1 on errors, -2 on wrong client command, -3 useless id
+*/
+int listen_for_commands(int sd, int* routine, int* action);
 
 #endif
