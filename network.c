@@ -14,7 +14,10 @@ int create_server(int port){
     int reuse = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0)
         perror("setsockopt(SO_REUSEADDR) failed");
-
+    #ifdef SO_REUSEPORT
+    if (setsockopt(s, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0) 
+        perror("setsockopt(SO_REUSEPORT) failed");
+    #endif
     // Initialize the struct
     memset(&sin, 0, sizeof(sin));
     sin.sin_family = AF_INET;

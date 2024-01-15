@@ -59,7 +59,7 @@ int main(int argc, char *argv[]){
         }
 
 
-        printf("[.] Listening for incoming connectios..\n");
+        printf("[.] Listening for incoming connections..\n");
         if((c_socket = conn_listen(s_socket, port)) == -1){
             printf("[x] Error while listening for incoming connections\n");
             continue;

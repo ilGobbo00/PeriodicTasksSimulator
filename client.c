@@ -34,7 +34,7 @@
 
     @param int socket
     @param char* buffer to store read data
-    @param int size to read
+    @param int amount of data to read
     @return bytes read or -1 on error
 */
 int read_resp(int, char*, int);
@@ -114,16 +114,18 @@ int main(int argc, char **argv){
     }
 
     // Print the instruction by default (this will test also the message exchange)
-    sprintf(data, "help");
     bzero(data, datalen);
-    // if(send_data(s, data) == -1){
-    //     printf("[!] Error while sendind data. Execution aborted.\n");
-    //     return -1;
-    // }
-    // if(read_resp(s, data, datalen) == -1){
-    //     printf("[!] Error while reading data. Execution aborted.\n");
-    //     return -1;
-    // }
+    sprintf(data, "help");
+    
+    // Test connection and display server's commands
+    if(send_data(s, data) == -1){
+        printf("[!] Error while sendind data. Execution aborted.\n");
+        return -1;
+    }
+    if(read_resp(s, data, datalen) == -1){
+        printf("[!] Error while reading data. Execution aborted.\n");
+        return -1;
+    }
     
     printf("Enter \"quit\" to exit\n");
     printf("\n[<] %s\n", data);
@@ -150,6 +152,7 @@ int main(int argc, char **argv){
         else
             printf("[<] %s\n", data);
 
+        if(!strcmp(data, "bye")) break;
         // DEBUG
 /* 
         // Send first the number of characters in the command and then
