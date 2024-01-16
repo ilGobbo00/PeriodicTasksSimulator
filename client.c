@@ -204,8 +204,8 @@ int main(int argc, char **argv){
 int send_data(int sd, char* buffer){
     unsigned int bufsize = htonl(strlen(buffer));
 
-    //TODO remove
-    printf("buffer: '%s'\n", buffer);
+    // //TODO remove
+    // printf("buffer: '%s'\n", buffer);
 
     // Send length
     if(send(sd, &bufsize, sizeof(bufsize), 0) == -1)
