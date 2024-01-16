@@ -51,7 +51,7 @@ struct th_info {
 
 struct thread {
     struct th_info info;    // Thread info
-    pthread_t * thread;
+    pthread_t *__restrict thread;
 };
 
 /*
@@ -68,7 +68,7 @@ struct thread {
 
     @return true if the set of task is schedulable for sure
 */
-int is_RM(int, struct thread*);
+int is_RM(struct thread*, int);
 
 /*
     Function to check if the schedulability of the set of tasks

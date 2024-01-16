@@ -29,9 +29,9 @@ void order_ths(struct thread* thrs, int n_threads){
 }
 
 int is_schedulable(struct thread* thrs, int n_threads){
-    if(is_RM(n_threads, thrs)) return 1;   // The task set respects the U_lub
+    if(is_RM(thrs, n_threads)) return 1;   // The task set respects the U_lub
 
-    order_ths(n_threads, thrs);            // Order priorities in descending order
+    order_ths(thrs, n_threads);            // Order priorities in descending order
     int expired = 0;        // Flag to check if a deadline is not respected
 
     int prev_respt, curr_respt;
