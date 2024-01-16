@@ -2,7 +2,7 @@
 
 CC = gcc
 CFLAGS = -Wall -g -Wno-unused-variable
-LDFLAGS = -lm
+LDFLAGS = -lm -lpthread
 
 # List of source files
 SOURCES = orchestrator.c scheduling.c network.c
