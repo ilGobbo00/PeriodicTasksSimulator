@@ -14,24 +14,6 @@ void send_datac();
 
 // Utilities
 
-
-// ============== DEBUG
-int receive(int sd, char *retBuf, int size)
-{
-  int totSize, currSize;
-  totSize = 0;
-  while(totSize < size)
-  {
-    currSize = recv(sd, &retBuf[totSize], size - totSize, 0);
-    if(currSize <= 0)
-/* An error occurred */
-      return -1;
-    totSize += currSize;
-  }
-  return 0;
-}
-// =======================
-
 /*
     Checks whether the id is already used by an existing thread
 
@@ -40,7 +22,11 @@ int receive(int sd, char *retBuf, int size)
     @param int - id to search for
     @return 1 if it exists, 0 otherwise
 */ 
-int existing_id(struct thread ths[], int active_th, int id);
+int existing_id(struct thread ths[], unsigned int active_th, int id);
+
+int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsigned int* active_threads, int id, int period, int comptime, int priority, int type, void* function);
+int close_thread(int s, struct thread* threads, unsigned int* active_threads, int id);   
+
 
 int main(int argc, char *argv[]){
     if(argc < 2){
@@ -244,56 +230,16 @@ int main(int argc, char *argv[]){
                 case READ: 
                     switch(action){
                         case START:
-                            if(existing_id(threads, active_threads, id)){
-                                printf("[x] Already existing id\n");
-                                send_data(c_socket, "ID already existing");
-                                continue;
-                            }
-
-                            period = 20;
+                            period = 16;
                             comptime = 2;
                             priority = 1;
                             type = READ;
 
-                            struct thread new_th = {{id++, period, comptime, priority, type}};
-                            th_analysis[active_threads] = new_th;
-
-                            if(!is_schedulable(th_analysis, active_threads+1)){
-                                printf("[x] Non schedulable thread\n");
-                                send_data(c_socket, "Function not started - not schedulable thread");
-                                continue;
-                            }
-
-                            if(pthread_create(new_th.thread, NULL, &read_datac,NULL)){
-                                printf("[x] Error while creating a new thread\n");
-                                send_data(c_socket, "Function not started - error while creating a new thread");
-                                continue;
-                            }
-                            if(!pthread_setschedprio(new_th.thread, priority))
-                                printf("[!] Can't set the priority to the new thread\n");
-                            
-                            threads[active_threads++] = new_th;
-
+                            start_thread(c_socket, threads, th_analysis, &active_threads, id, period, comptime, priority, type, &read_datac);
                         break;
 
                         case END:
-                            int j; 
-                            for(j=0; j<active_threads && threads[j].info.id != id; j++);
-
-                            if(pthread_cancel(threads[j].thread)){
-                                printf("[!] It was not possible to stop the thread\n");
-                                send_data(c_socket, "Function not stopped - thread was not stopped due to an error");
-                                continue;
-                            }
-
-                            // Compat other active threads
-                            for(; j<active_threads-1; j++)
-                                threads[j] = threads[j+1];
-                            
-                            active_threads--;
-
-                            printf("[+] Thread correctly stopped\n");
-                            send_data(c_socket, "Function correclty stopped");
+                            close_thread(c_socket, threads, &active_threads, id);
                         break;
 
                         default:
@@ -303,9 +249,45 @@ int main(int argc, char *argv[]){
                 break;
 
                 case WRITE: 
+                    switch(action){
+                        case START:
+                            period = 40;
+                            comptime = 4;
+                            priority = 2;
+                            type = WRITE;
+
+                            start_thread(c_socket, threads, th_analysis, &active_threads, id, period, comptime, priority, type, &read_datac);
+                        break;
+
+                        case END:
+                            close_thread(c_socket, threads, &active_threads, id);
+                        break;
+
+                        default:
+                            printf("[x] thread %s: action not recognized\n", ROUTINES[WRITE]);
+                            send_data(c_socket, "start/end command not recognize");
+                    }
                 break;
 
                 case SEND: 
+                    switch(action){
+                        case START:
+                            period = 50;
+                            comptime = 20;
+                            priority = 3;
+                            type = SEND;
+
+                            start_thread(c_socket, threads, th_analysis, &active_threads, id, period, comptime, priority, type, &read_datac);
+                        break;
+
+                        case END:
+                            close_thread(c_socket, threads, &active_threads, id);
+                        break;
+
+                        default:
+                            printf("[x] thread %s: action not recognized\n", ROUTINES[SEND]);
+                            send_data(c_socket, "start/end command not recognize");
+                    }
                 break;
 
                 default:
@@ -315,13 +297,75 @@ int main(int argc, char *argv[]){
         }
 
         // Kill all remaining zombies
+        int res = 0;
         for(int i=0; i<active_threads; i++)
-            pthread_cancel(threads[i].thread);
+            res |= pthread_cancel(*(threads[i].thread));
+        if(res)
+            printf("[x] No all remaining threads were succesfully closed\n");
+        
+        active_threads = 0;
     }
 
     return 0;
 }
 
+int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsigned int* active_threads, int id, int period, int comptime, int priority, int type, void* function){
+    if(existing_id(threads, *active_threads, id)){
+        printf("[x] Already existing id\n");
+        send_data(s, "ID already existing");
+        return -1;
+    }
+
+    struct thread new_th = {{id++, period, comptime, priority, type}};
+    th_analysis[*active_threads] = new_th;
+
+    if(!is_schedulable(th_analysis, (*active_threads)+1)){
+        printf("[x] Non schedulable thread\n");
+        send_data(s, "Function not started - not schedulable thread");
+        return -1;
+    }
+
+    if(pthread_create(new_th.thread, NULL, function, NULL)){
+        printf("[x] Error while creating a new thread\n");
+        send_data(s, "Function not started - error while creating a new thread");
+        return -1;
+    }
+    if(!pthread_setschedprio(*new_th.thread, priority))
+        printf("[!] Can't set the priority to the new thread\n");
+    
+    threads[*active_threads++] = new_th;
+
+    return 0;
+}
+
+int close_thread(int s, struct thread* threads, unsigned int* active_threads, int id){
+    int j; 
+    for(j=0; j<*active_threads && threads[j].info.id != id; j++);
+
+    if(pthread_cancel(*threads[j].thread)){
+        printf("[!] It was not possible to stop the thread\n");
+        send_data(s, "Function not stopped - thread was not stopped due to an error");
+        return -1;
+    }
+
+    // Compat other active threads
+    for(; j<*active_threads-1; j++)
+        threads[j] = threads[j+1];
+    
+    (*active_threads)--;
+
+    printf("[+] Thread correctly stopped\n");
+    send_data(s, "Function correclty stopped");
+
+    return 0;
+}
+
+int existing_id(struct thread ths[], unsigned int active_th, int id){
+    for(int i=0; i<active_th; i++)
+        if(ths[i].info.id == id)
+            return 1;
+    return 0;
+}
 
 void read_datac(){
     int computation = 2;
@@ -350,9 +394,3 @@ void send_datac(){
             printf("Nanosleep error: send_data\n");
 }
 
-int existing_id(struct thread ths[], int active_th, int id){
-    for(int i=0; i<active_th; i++)
-        if(ths[i].info.id == id)
-            return 1;
-    return 0;
-}
