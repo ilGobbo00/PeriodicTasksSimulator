@@ -134,7 +134,7 @@ int main(int argc, char **argv){
         // Get command from user
         printf("[>] Enter command: ");
         bzero(data, datalen);
-        scanf("%s", data);
+        fgets(data, datalen, stdin);
 
         if (!strcmp(data, "quit"))
             break;
@@ -202,6 +202,9 @@ int main(int argc, char **argv){
 
 int send_data(int sd, char* buffer){
     unsigned int bufsize = htonl(strlen(buffer));
+
+    //TODO remove
+    printf("buffer: '%s'\n", buffer);
 
     // Send length
     if(send(sd, &bufsize, sizeof(bufsize), 0) == -1)
