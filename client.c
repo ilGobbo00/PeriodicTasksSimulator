@@ -135,6 +135,7 @@ int main(int argc, char **argv){
         printf("[>] Enter command: ");
         bzero(data, datalen);
         fgets(data, datalen, stdin);
+        data[strlen(data)-1] = 0;
 
         if (!strcmp(data, "quit"))
             break;
