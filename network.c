@@ -95,6 +95,9 @@ int listen_for_commands(int sd, int* routine, int* action){
     char client_comm[20];
     char r[10], a[10];
 
+    bzero(r, 10);
+    bzero(a, 10);
+
     int id = NONE;
 
     // Read response
@@ -106,9 +109,9 @@ int listen_for_commands(int sd, int* routine, int* action){
     printf("[i] Log: %s\n", client_comm);
 
     // Check for syntax
-    sscanf(client_comm, "%s %s %d", r, a, &id);
-    if(strlen(client_comm) && !is_routine(r)){
-        printf("Wrong client input\n");
+    int res = sscanf(client_comm, "%s %s %d", r, a, &id);
+    if(!strlen(client_comm) || !is_routine(r)){
+        printf("[-] Wrong client input\n");
             return WRONG; 
     }
 
@@ -118,24 +121,26 @@ int listen_for_commands(int sd, int* routine, int* action){
     else *action = ERROR;
 
     // Set routine
-    if(!strcmp(r, ROUTINES[CLOSE]) || !strlen(client_comm)){
+    *routine = -1;
+    if(!strcmp(r, ROUTINES[CLOSE])/*  || !strlen(client_comm) */){
         *routine = CLOSE;
         return NONE;
     }
-    
+
     if(!strcmp(r, ROUTINES[HELP])){
         *routine = HELP;
         return NONE;
     }
 
-    if(!strcmp(r, ROUTINES[READ]))
-        *routine = !strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END]) ?  READ : WRONG;
+    if(!strcmp(r, ROUTINES[READ]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
+        *routine =  READ;
         
-    if(!strcmp(r, ROUTINES[WRITE]))
-        *routine = !strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END]) ?  WRITE : WRONG;
+    if(!strcmp(r, ROUTINES[WRITE]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
+        *routine =  WRITE;
 
-    if(!strcmp(r, ROUTINES[SEND]))
-        *routine = !strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END]) ?  SEND : WRONG;
+    if(!strcmp(r, ROUTINES[SEND]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
+        *routine =  SEND;
 
-    return id;
+
+    return *routine != -1 ? id : WRONG;
 }
