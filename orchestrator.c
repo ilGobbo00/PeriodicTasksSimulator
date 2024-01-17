@@ -7,6 +7,8 @@
 #include "network.h"
 #include "stdio.h"
 
+#define DEBUG printf("------- HERE -------\n");
+
 // Routines 
 void read_datac();
 void store_datac();
@@ -39,21 +41,22 @@ int main(int argc, char *argv[]){
 
 
     char help[] = 
-        "   <task> <'start'/'end'> <id>\n\n"
-        "   available task: read\n"
-        "         store\n"
-        "         send\n";
+        "   <task> <'start'/'end'> <id bigger than 5>\n\n"
+        "           available task: read\n"
+        "                           store\n"
+        "                           send\n";
 
     // threads' info
     int period, comptime, priority, type;
+    void* r_to_exe; 
     
     // Serve a client at time
+    if((s_socket = create_server(port)) == -1){
+        printf("[x] Error while creating server\n");
+        return 1;
+    }
     while(1){
 
-        if((s_socket = create_server(port)) == -1){
-            printf("[x] Error while creating server\n");
-            return 1;
-        }
 
 
         printf("[.] Listening for incoming connections..\n");
@@ -61,111 +64,6 @@ int main(int argc, char *argv[]){
             printf("[x] Error while listening for incoming connections\n");
             continue;
         } 
-
-        #pragma region DEBUG 
-        // DEBUG-START ==============================================
-        
-        // int 	 currSd;
-        // struct   sockaddr_in sin, retSin;
-        // /* Create a new socket */
-        // if ((s = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-        // {
-        //     perror("socket");
-        //     exit(1);
-        // }  
-        // /* set socket options REUSE ADDRESS */
-        //     int reuse = 1;
-        //     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0)
-        //         perror("setsockopt(SO_REUSEADDR) failed");
-        // /* Initialize the address (struct sokaddr_in) fields */
-        // memset(&sin, 0, sizeof(sin));
-        // sin.sin_family = AF_INET;
-        // sin.sin_addr.s_addr = INADDR_ANY;
-        // sin.sin_port = htons(port);
-
-        // /* Bind the socket to the specified port number */
-        // if (bind(s, (struct sockaddr *) &sin, sizeof(sin)) == -1)
-        // {
-        //     perror("bind");
-        //     exit(1);
-        // }
-        // /* Set the maximum queue length for clients requesting connection to 5 */
-        // if (listen(s, 5) == -1)
-        // {
-        //     perror("listen");
-        //     exit(1);
-        // }
-
-        // int sAddrLen;
-        // sAddrLen = sizeof(retSin);
-        // /* Accept and serve all incoming connections in a loop */
-        // for(;;)
-        // {
-        //     if ((currSd =
-        //         accept(s, (struct sockaddr *) &retSin, &sAddrLen)) == -1)
-        //     {
-        //     perror("accept");
-        //     exit(1);
-        //     }
-        //     /* When execution reaches this point a client established the connection.
-        //     The returned socket (currSd) is used to communicate with the client */
-        //     printf("Connection received from %s\n", inet_ntoa(retSin.sin_addr));
-
-        //     // ---------------------- HANDLE CONNECTION -------------------
-        //     unsigned int netLen;
-        //     int len;
-        //     int exit_status = 0;
-        //     char *command, *answer;
-        //     for(;;)
-        //     {
-        //         /* Get the command string length
-        //         If receive fails, the client most likely exited */
-        //         if(receive(currSd, (char *)&netLen, sizeof(netLen)))
-        //             break;
-        //         /* Convert from network byte order */
-        //         len = ntohl(netLen);
-        //         command = malloc(len+1);
-        //         /* Get the command and write terminator */
-        //         receive(currSd, command, len);
-        //         command[len] = 0;
-        //         /* Execute the command and get the answer character string */    
-        //         if(strcmp(command,"help") == 0)
-        //             answer = strdup(
-        //                 "server is active.\n\n"
-        //                 "    commands:\n"
-        //                 "       help: print this help\n"
-        //                 "       quit: stop client connection\n"
-        //                 "       stop: force stop server connection\n"
-        //                 );
-        //         else if (strcmp(command,"stop") == 0) {
-        //             answer = strdup("closing server connection");
-        //             exit_status = 1;
-        //         }
-        //         else 
-        //             answer = strdup("invalid command (try help).");
-        //         /* Send the answer back */
-        //         len = strlen(answer);
-        //         /* Convert to network byte order */
-        //         netLen = htonl(len);
-        //         /* Send answer character length */
-        //         if (send(currSd, &netLen, sizeof(netLen), 0) == -1)
-        //             break;
-        //         /* Send answer characters */
-        //         if (send(currSd, answer, len, 0) == -1)
-        //             break;
-        //         free(command);
-        //         free(answer);
-        //         if (exit_status)  {
-        //             break;
-        //         }
-        //     }
-        // }
-
-
-        // printf("End of debug\n");
-
-        // DEBUG-END ===================================================
-        #pragma endregion
 
         unsigned int id = 0, active_threads = 0;
         int routine, action, ret_id;
@@ -178,7 +76,14 @@ int main(int argc, char *argv[]){
 
     
         while(!close_client){
+            // Print existing routines
+            printf("[i] Active routines' ids (%d): ", active_threads);
+            for(int k=0; k<active_threads; k++)
+                printf("%ld ", threads[k].info.id);
+            printf("\n");
+
             close_client = 0;
+            routine = action = -1;
             ret_id = listen_for_commands(c_socket, &routine, &action);
 
             // read error
@@ -197,111 +102,116 @@ int main(int argc, char *argv[]){
             
             // if a new thread will be started, prepare to analyse
             if(routine > CLOSE && action == START){
+                // Check if maximum number of threads was reached
                 if(active_threads+1 > MAX_THREADS){
                     printf("[i] Max number of thread reached\n");
                     send_data(c_socket, "Function not started - max number of threads reached");
                     continue;
                 }
-                if(existing_id(threads, active_threads, id)){
+                // Check if the id is available
+                if(existing_id(threads, active_threads, ret_id)){
                     send_data(c_socket, "Function not started - id already used: Use a different id");
                     continue;
                 }
-                memcpy(th_analysis, threads, MAX_THREADS * sizeof(struct thread));
             }
 
-            if(routine > CLOSE && action == END)
-                if(!existing_id(threads, active_threads, id)){
+            // Check if a routine has to be shutted
+            if(routine > CLOSE && action == END){
+                // Check if the id exists
+                if(!existing_id(threads, active_threads, ret_id)){
                     printf("[-] Thread not existing\n");
                     send_data(c_socket, "No action performed - id does not exist");
                     continue;
                 }
+                // If it does, close thread
+                if(!close_thread(c_socket, threads, &active_threads, ret_id)){
+                    printf("[+] Thread id: %d closed correctly\n", ret_id);
+                    send_data(c_socket, "Task ended");
+                }else{
+                    printf("[!] Some error while closing the thread id: %d\n", ret_id);
+                    send_data(c_socket, "Some error occured while closing the task");
+                }
+                continue;
+            }
+            
+            // Check for errors in action
+            if(routine > CLOSE && action == ERROR){
+                printf("[!] Action is not correct considering the selected routine\n");
+                send_data(c_socket, "No action performed - action is not correct");
+                continue;
+            }
+            // If there is enough room and the id is available, preapre for the analysis
+            if(routine > CLOSE) memcpy(th_analysis, threads, MAX_THREADS * sizeof(struct thread));
             
             
+            
+
             // routine and actions are correct (no further checks need to be done)
             switch(routine){
                 case CLOSE: 
                     send_data(c_socket, "bye");
                     close_client = 1;
+                    continue;
                 break;
+
                 case HELP: 
                     send_data(c_socket, help);
                     continue;
                 break;
+
                 case READ: 
-                    switch(action){
-                        case START:
                             period = 16;
                             comptime = 2;
                             priority = 1;
                             type = READ;
-
-                            start_thread(c_socket, threads, th_analysis, &active_threads, id, period, comptime, priority, type, &read_datac);
-                        break;
-
-                        case END:
-                            close_thread(c_socket, threads, &active_threads, id);
-                        break;
-
-                        default:
-                            printf("[x] thread %s: action not recognized\n", ROUTINES[READ]);
-                            send_data(c_socket, "start/end command not recognize");
-                    }
+                            r_to_exe = (void*)read_datac;
                 break;
 
                 case WRITE: 
-                    switch(action){
-                        case START:
                             period = 40;
                             comptime = 4;
                             priority = 2;
                             type = WRITE;
-
-                            start_thread(c_socket, threads, th_analysis, &active_threads, id, period, comptime, priority, type, &read_datac);
-                        break;
-
-                        case END:
-                            close_thread(c_socket, threads, &active_threads, id);
-                        break;
-
-                        default:
-                            printf("[x] thread %s: action not recognized\n", ROUTINES[WRITE]);
-                            send_data(c_socket, "start/end command not recognize");
-                    }
+                            r_to_exe = (void*)store_datac;
                 break;
 
                 case SEND: 
-                    switch(action){
-                        case START:
                             period = 50;
                             comptime = 20;
                             priority = 3;
                             type = SEND;
-
-                            start_thread(c_socket, threads, th_analysis, &active_threads, id, period, comptime, priority, type, &read_datac);
-                        break;
-
-                        case END:
-                            close_thread(c_socket, threads, &active_threads, id);
-                        break;
-
-                        default:
-                            printf("[x] thread %s: action not recognized\n", ROUTINES[SEND]);
-                            send_data(c_socket, "start/end command not recognize");
-                    }
+                            r_to_exe = (void*)send_datac;
                 break;
 
                 default:
                     printf("[-] Invalid routine\n");
                     send_data(c_socket, "Invalid routine");
+                    continue;
+            }
+
+            int res = start_thread(c_socket, threads, th_analysis, &active_threads, ret_id, period, comptime, priority, type, r_to_exe);
+            
+            if(!res){
+                printf("[+] New thread started\n");
+                send_data(c_socket, "New task started!");
+            }else{
+                if(res == -1){
+                    printf("[!] Failed to start the thread\n");
+                    send_data(c_socket, "Function not started - internal error");
+                }else{
+                    printf("[-] Task not schedulable\n");
+                    send_data(c_socket, "Function not started - task not schedulable");
+                }
             }
         }
 
         // Kill all remaining zombies
-        int res = 0;
-        for(int i=0; i<active_threads; i++)
-            res |= pthread_cancel(*(threads[i].thread));
+        int res = 0, i;
+        for(i=0; i<active_threads; i++)
+            res |= pthread_cancel(*threads[i].thread);
         if(res)
             printf("[x] No all remaining threads were succesfully closed\n");
+        else if(i>0) printf("[+] All remaining threads were correctly closed\n");
         
         active_threads = 0;
     }
@@ -310,30 +220,46 @@ int main(int argc, char *argv[]){
 }
 
 int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsigned int* active_threads, int id, int period, int comptime, int priority, int type, void* function){
+
     if(existing_id(threads, *active_threads, id)){
         printf("[x] Already existing id\n");
-        send_data(s, "ID already existing");
-        return -1;
+        // send_data(s, "ID already existing");
+        return -3;
     }
 
-    struct thread new_th = {{id++, period, comptime, priority, type}};
+    struct thread new_th = {{id, period, comptime, priority, type}, malloc(sizeof(pthread_t))};
     th_analysis[*active_threads] = new_th;
 
     if(!is_schedulable(th_analysis, (*active_threads)+1)){
         printf("[x] Non schedulable thread\n");
-        send_data(s, "Function not started - not schedulable thread");
+        // send_data(s, "Function not started - not schedulable thread");
+        return -2;
+    }
+
+    unsigned int* p_id = malloc(sizeof(unsigned int));
+    *p_id = id;
+
+    if(pthread_create(new_th.thread, NULL, function, p_id)){
+        printf("[x] Error while creating a new thread\n");
+        free(new_th.thread);
+        // send_data(s, "Function not started - error while creating a new thread");
         return -1;
     }
 
-    if(pthread_create(new_th.thread, NULL, function, NULL)){
-        printf("[x] Error while creating a new thread\n");
-        send_data(s, "Function not started - error while creating a new thread");
-        return -1;
-    }
     if(!pthread_setschedprio(*new_th.thread, priority))
         printf("[!] Can't set the priority to the new thread\n");
-    
-    threads[*active_threads++] = new_th;
+
+    threads[*active_threads] = new_th;
+
+    // TODO remove 
+        // printf("%d\n", *active_threads);
+    //-------
+
+    (*active_threads)++;
+
+    // TODO remove 
+        // printf("%d\n", *active_threads);
+    //-------
 
     return 0;
 }
@@ -348,6 +274,8 @@ int close_thread(int s, struct thread* threads, unsigned int* active_threads, in
         return -1;
     }
 
+    free(threads[j].thread);
+
     // Compat other active threads
     for(; j<*active_threads-1; j++)
         threads[j] = threads[j+1];
@@ -355,7 +283,7 @@ int close_thread(int s, struct thread* threads, unsigned int* active_threads, in
     (*active_threads)--;
 
     printf("[+] Thread correctly stopped\n");
-    send_data(s, "Function correclty stopped");
+    // send_data(s, "Function correclty stopped");
 
     return 0;
 }
@@ -367,30 +295,43 @@ int existing_id(struct thread ths[], unsigned int active_th, int id){
     return 0;
 }
 
-void read_datac(){
-    int computation = 2;
-    const struct timespec unit = {0,850000}; 
+void read_datac(void* arg){
+    unsigned int* id = (unsigned int*) arg;
+    int computation = 10;
+    const struct timespec unit = {5,850000}; 
 
-    while(computation--)
+    while(computation--){
         if(nanosleep(&unit, NULL))
             printf("Nanosleep error: read_data\n");
+        printf("Read task %d: %d\n", *id, computation);
+    }
+
+    free(id);
 }
 
-void store_datac(){
+void store_datac(void* arg){
+    unsigned int* id = (unsigned int*) arg;
     int computation = 4;
     const struct timespec unit = {0,850000}; 
 
-    while(computation--)
+    while(computation--){
         if(nanosleep(&unit, NULL))
             printf("Nanosleep error: store_data\n");
+        printf("Store task %d: %d\n", *id, computation);
+    }
+    free(id);
 }
 
-void send_datac(){
+void send_datac(void* arg){
+    unsigned int* id = (unsigned int*) arg;
     int computation = 20;
     const struct timespec unit = {0,850000}; 
 
-    while(computation--)
+    while(computation--){
         if(nanosleep(&unit, NULL))
             printf("Nanosleep error: send_data\n");
+        printf("Send task %d: %d\n", *id, computation);
+    }
+    free(id);
 }
 
