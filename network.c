@@ -1,6 +1,5 @@
 #include "network.h"
 
-
 int create_server(int port){
     int s;
     int len;
@@ -71,11 +70,16 @@ int read_resp(int sd, char *buff, int maxsize){
     unsigned int t=0, rlen;
 
     // Get the amount of data to read
-    if(read(sd, &rlen, sizeof(rlen)) == -1){
+    int res = read(sd, &rlen, sizeof(rlen)); 
+    if(res == -1){
         perror("read");
         return -1;
     }
+    if(!res) return 0;
+
     rlen = ntohl(rlen);
+
+    // BUG read ritorna 0 con EOF
 
     // String is already terminated due to bzero
 
@@ -100,10 +104,18 @@ int listen_for_commands(int sd, int* routine, int* action){
 
     int id = NONE;
 
+    // BUG read_response ritorna 0 con EOF (client chiuso)
     // Read response
-    if(read_resp(sd, client_comm, 20) == -1){
+    int resp = read_resp(sd, client_comm, 20);
+    if(resp == -1){
         printf("Error while reading client request\n");
         return -1;
+    }
+
+    // Close the connetion if client disconnected
+    if(!resp){
+        *routine = CLOSE;
+        return NONE;
     }
 
     printf("[i] Log: %s\n", client_comm);
@@ -122,7 +134,7 @@ int listen_for_commands(int sd, int* routine, int* action){
 
     // Set routine
     *routine = -1;
-    if(!strcmp(r, ROUTINES[CLOSE])/*  || !strlen(client_comm) */){
+    if(!strcmp(r, ROUTINES[CLOSE])){
         *routine = CLOSE;
         return NONE;
     }
@@ -135,8 +147,8 @@ int listen_for_commands(int sd, int* routine, int* action){
     if(!strcmp(r, ROUTINES[READ]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
         *routine =  READ;
         
-    if(!strcmp(r, ROUTINES[WRITE]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
-        *routine =  WRITE;
+    if(!strcmp(r, ROUTINES[STORE]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
+        *routine =  STORE;
 
     if(!strcmp(r, ROUTINES[SEND]) && (!strcmp(a, ACTIONS[START]) || !strcmp(a, ACTIONS[END])))
         *routine =  SEND;
