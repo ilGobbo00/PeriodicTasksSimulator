@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <math.h>
+#include <string.h>
 
 #define MAX_THREADS 256
 
@@ -14,10 +15,10 @@ enum{
     HELP,   
     CLOSE,  
     READ,   
-    WRITE,  
+    STORE,  
     SEND,   
 };
-static const char* ROUTINES[] = {"help", "close", "read", "write", "send"};
+static const char* ROUTINES[] = {"help", "close", "read", "store", "send"};
 
 
 // Actions
@@ -30,8 +31,8 @@ static const char* ACTIONS[] = {"start", "end", "error"};
 
 // return value
 enum{
-    NONE, 
-    WRONG
+    NONE = -2, 
+    WRONG = -3
 };
 
 

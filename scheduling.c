@@ -1,17 +1,19 @@
 #include "scheduling.h"
 
 int is_RM(struct thread* thrs, int n_threads){
-    float tot_utilization;
+    double tot_utilization = 0;
     
     // Get the sum of all utilizations
     for(int i=0; i<n_threads; i++)
-        tot_utilization += thrs[i].info.comptime / thrs[i].info.period;
+        tot_utilization += (double)thrs[i].info.comptime / (double)thrs[i].info.period;
+
+    printf("Tot utilization %f in %d threads\n", tot_utilization, n_threads);
 
     // Compare with the threshold
     if(n_threads > 10)
         return tot_utilization < log(2);
     else
-        return tot_utilization < n_threads * (pow(2, 1/n_threads) - 1);
+        return tot_utilization < (double)n_threads * (pow(2, (double)1/(double)n_threads) - 1);
 }
 
 void order_ths(struct thread* thrs, int n_threads){
@@ -35,17 +37,23 @@ int is_schedulable(struct thread* thrs, int n_threads){
     int expired = 0;        // Flag to check if a deadline is not respected
 
     int prev_respt, curr_respt;
+    
+    // Arrays to store the response
+    char resp[1000];
+        bzero(resp, 1000);
 
     // Check all threads
     for(int i=0; !expired && i<n_threads; i++){
-        // printf("--- Task %d ---\n", i+1);
+        sprintf(resp + strlen(resp), "\n--- Task %d ---", i+1);
 
         // Initialize variables
         curr_respt = thrs[i].info.comptime;            
         prev_respt = curr_respt-1;                          // Just to pass the next while
 
+        
+
         // Continue for (undefined) iterations
-        // int c = 0;                                       // Number of cycles (for debugging purposes)
+        int c = 0;                                       // Number of cycles (for debugging purposes)
         while(prev_respt < curr_respt && !expired){
             // Save the previous response time
             prev_respt = curr_respt;
@@ -54,21 +62,22 @@ int is_schedulable(struct thread* thrs, int n_threads){
             curr_respt = thrs[i].info.comptime;
             
             // Consider all interferences from higher-priority tasks
-            // printf("w(%d) = %d", c, curr_respt);
+            sprintf(resp + strlen(resp), "\nw(%d) = %d", c, curr_respt);
             for(int j=i-1; j>-1; j--){
-                // printf(" + ceil(%d / %d) * %d", prev_respt, threads[j].info.period, threads[j].info.exetime);
+                sprintf(resp + strlen(resp), " + ceil(%d / %d) * %d", prev_respt, thrs[j].info.period, thrs[j].info.comptime);
                 curr_respt += ((int)ceil((double)prev_respt/(double)thrs[j].info.period)) * thrs[j].info.comptime;
             }
 
-            // printf(" = %d\n", curr_respt);
+            sprintf(resp + strlen(resp), " = %d", curr_respt);
 
             // Check for theadlines
             if(curr_respt > thrs[i].info.period){
+                printf("%s > %d\n\n", resp, thrs[i].info.period);
                 return 0;                               // Not schedulable 
                 break;
             }
 
-            // c++;
+            c++;
         }
     }
 
