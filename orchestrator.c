@@ -6,12 +6,38 @@
 
 #include "network.h"
 #include "stdio.h"
-
+#include <signal.h>
 #define DEBUG printf("------- HERE -------\n");
 
 // Routines 
+/*
+    HIGH PRIORITY TASK
+    PERIOD: 2s
+    COMPUTATIONAL TIME: 1s
+
+    Average Period over 10 executions: 2.003 seconds
+    Average CPU Time over 10 executions: 1.001 seconds
+*/
 void read_datac();
+
+/*
+    MEDIUM PRIORITY TASK
+    PERIOD: 3s
+    COMPUTATIONAL TIME: 1s
+
+    Average Period over 10 executions: 2.008 seconds
+    Average CPU Time over 10 executions: 1.001 seconds
+*/
 void store_datac();
+
+/*
+    LOW PRIORITY TASK
+    PERIOD: 5s
+    COMPUTATIONAL TIME: 1s
+
+    Average Period over 10 executions: 5.022 seconds
+    Average CPU Time over 10 executions: 1.001 seconds
+*/
 void send_datac();
 
 // Utilities
@@ -39,6 +65,8 @@ int main(int argc, char *argv[]){
     int port, s_socket, c_socket;
     sscanf(argv[1], "%d", &port);
 
+    // TODO dopo aver catturato il EOF con il read, togliere togliere il comando per ignorare il segnale
+    // signal(SIGPIPE, SIG_IGN);
 
     char help[] = 
         "   <task> <'start'/'end'> <id bigger than 5>\n\n"
@@ -86,6 +114,7 @@ int main(int argc, char *argv[]){
             routine = action = -1;
             ret_id = listen_for_commands(c_socket, &routine, &action);
 
+            // BUG  se il ret_id == .. allora la connessione é stata chiusa
             // read error
             if(ret_id == -1){
                 printf("[x] Command listen error\n");
@@ -108,6 +137,7 @@ int main(int argc, char *argv[]){
                     send_data(c_socket, "Function not started - max number of threads reached");
                     continue;
                 }
+                
                 // Check if the id is available
                 if(existing_id(threads, active_threads, ret_id)){
                     send_data(c_socket, "Function not started - id already used: Use a different id");
@@ -160,24 +190,24 @@ int main(int argc, char *argv[]){
                 break;
 
                 case READ: 
-                            period = 16;
-                            comptime = 2;
+                            period = 2;
+                            comptime = 1;
                             priority = 1;
                             type = READ;
                             r_to_exe = (void*)read_datac;
                 break;
 
-                case WRITE: 
-                            period = 40;
-                            comptime = 4;
+                case STORE: 
+                            period = 3;
+                            comptime = 1;
                             priority = 2;
-                            type = WRITE;
+                            type = STORE;
                             r_to_exe = (void*)store_datac;
                 break;
 
                 case SEND: 
-                            period = 50;
-                            comptime = 20;
+                            period = 5;
+                            comptime = 1;
                             priority = 3;
                             type = SEND;
                             r_to_exe = (void*)send_datac;
@@ -251,15 +281,7 @@ int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsi
 
     threads[*active_threads] = new_th;
 
-    // TODO remove 
-        // printf("%d\n", *active_threads);
-    //-------
-
     (*active_threads)++;
-
-    // TODO remove 
-        // printf("%d\n", *active_threads);
-    //-------
 
     return 0;
 }
@@ -270,7 +292,7 @@ int close_thread(int s, struct thread* threads, unsigned int* active_threads, in
 
     if(pthread_cancel(*threads[j].thread)){
         printf("[!] It was not possible to stop the thread\n");
-        send_data(s, "Function not stopped - thread was not stopped due to an error");
+        // send_data(s, "Function not stopped - thread was not stopped due to an error");
         return -1;
     }
 
@@ -297,40 +319,107 @@ int existing_id(struct thread ths[], unsigned int active_th, int id){
 
 void read_datac(void* arg){
     unsigned int* id = (unsigned int*) arg;
-    int computation = 10;
-    const struct timespec unit = {5,850000}; 
+    clock_t start_time_print = clock();
+    clock_t end_time, start_time;
+    double elapsed_time, elapsed_time_print;
+    int c = 0;
 
-    while(computation--){
-        if(nanosleep(&unit, NULL))
-            printf("Nanosleep error: read_data\n");
-        printf("Read task %d: %d\n", *id, computation);
+    struct timespec time, rem;
+    time.tv_sec = 0;
+    time.tv_nsec = (long) (995 * 1000000); 
+    
+    while(!nanosleep(&time, NULL)){
+        // 20ms execution
+        start_time = clock();
+        while (1) {
+            end_time = clock();
+            elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+            elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
+
+            // if (elapsed_time_print >= 1){
+            //     printf("Data sent : %d\n", c++);
+            //     start_time_print = end_time;  
+            // }
+            
+            if (elapsed_time >= 1) {
+                printf("Read task %d: %d\n", *id, c++);
+                start_time = end_time;  
+                break;
+            }
+
+        }   
+        // nanosleep(&time, NULL);
     }
-
     free(id);
 }
 
 void store_datac(void* arg){
     unsigned int* id = (unsigned int*) arg;
-    int computation = 4;
-    const struct timespec unit = {0,850000}; 
 
-    while(computation--){
-        if(nanosleep(&unit, NULL))
-            printf("Nanosleep error: store_data\n");
-        printf("Store task %d: %d\n", *id, computation);
+    clock_t start_time_print = clock();
+    clock_t end_time, start_time;
+    double elapsed_time, elapsed_time_print;
+    int c = 0;
+
+    struct timespec time, rem;
+    time.tv_sec = 1.7;
+    time.tv_nsec = (long) (0 * 1000000); 
+    
+    while(!nanosleep(&time, NULL)){
+        // 20ms execution
+        start_time = clock();
+        while (1) {
+            end_time = clock();
+            elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+            elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
+
+            // if (elapsed_time_print >= 1){
+            //     printf("Data sent : %d\n", c++);
+            //     start_time_print = end_time;  
+            // }
+            
+            if (elapsed_time >= 1) {
+                printf("Store task %d: %d\n", *id, c++);
+                start_time = end_time;  
+                break;
+            }
+        }   
+        // nanosleep(&time, NULL);
     }
     free(id);
 }
 
 void send_datac(void* arg){
     unsigned int* id = (unsigned int*) arg;
-    int computation = 20;
-    const struct timespec unit = {0,850000}; 
+    clock_t start_time_print = clock();
+    clock_t end_time, start_time;
+    double elapsed_time, elapsed_time_print;
+    struct timespec time, rem;
+    int c = 0;
 
-    while(computation--){
-        if(nanosleep(&unit, NULL))
-            printf("Nanosleep error: send_data\n");
-        printf("Send task %d: %d\n", *id, computation);
+    while(1){
+        // 20ms execution
+        start_time = clock();
+        while (1) {
+            end_time = clock();
+            elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+            elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
+
+            // if (elapsed_time_print >= 1){
+            //     printf("Data sent : %d\n", c++);
+            //     start_time_print = end_time;  
+            // }
+            
+            if (elapsed_time >= 1) {
+                printf("Send task %d: %d\n", *id, c++);
+                start_time = end_time;  
+                break;
+            }
+
+        }
+        time.tv_sec = 4;
+        time.tv_nsec = (long) (0 * 1000000); 
+        nanosleep(&time, NULL);
     }
     free(id);
 }
