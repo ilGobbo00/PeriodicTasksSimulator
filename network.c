@@ -79,8 +79,6 @@ int read_resp(int sd, char *buff, int maxsize){
 
     rlen = ntohl(rlen);
 
-    // BUG read ritorna 0 con EOF
-
     // String is already terminated due to bzero
 
     // Read data and return status code
@@ -104,7 +102,6 @@ int listen_for_commands(int sd, int* routine, int* action){
 
     int id = NONE;
 
-    // BUG read_response ritorna 0 con EOF (client chiuso)
     // Read response
     int resp = read_resp(sd, client_comm, 20);
     if(resp == -1){
