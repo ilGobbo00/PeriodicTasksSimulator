@@ -12,31 +12,31 @@
 // Routines 
 /*
     HIGH PRIORITY TASK
-    PERIOD: 2s
-    COMPUTATIONAL TIME: 1s
+    PERIOD: 200ms
+    COMPUTATIONAL TIME: 100ms
 
-    Average Period over 10 executions: 2.003 seconds
-    Average CPU Time over 10 executions: 1.001 seconds
+    Average Real Time over 10 executions: 0.203 seconds
+    Average CPU Time over 10 executions: 0.101 seconds
 */
 void read_datac();
 
 /*
     MEDIUM PRIORITY TASK
-    PERIOD: 3s
-    COMPUTATIONAL TIME: 1s
+    PERIOD: 300ms
+    COMPUTATIONAL TIME: 60ms
 
-    Average Period over 10 executions: 2.008 seconds
-    Average CPU Time over 10 executions: 1.001 seconds
+    Average Real Time over 10 executions: 0.302 seconds
+    Average CPU Time over 10 executions: 0.061 seconds
 */
 void store_datac();
 
 /*
     LOW PRIORITY TASK
-    PERIOD: 5s
-    COMPUTATIONAL TIME: 1s
+    PERIOD: 500ms
+    COMPUTATIONAL TIME: 100ms
 
-    Average Period over 10 executions: 5.022 seconds
-    Average CPU Time over 10 executions: 1.001 seconds
+    Average Real Time over 10 executions: 0.500 seconds
+    Average CPU Time over 10 executions: 0.101 seconds
 */
 void send_datac();
 
@@ -190,24 +190,24 @@ int main(int argc, char *argv[]){
                 break;
 
                 case READ: 
-                            period = 2;
-                            comptime = 1;
+                            period = 200;
+                            comptime = 100;
                             priority = 1;
                             type = READ;
                             r_to_exe = (void*)read_datac;
                 break;
 
                 case STORE: 
-                            period = 3;
-                            comptime = 1;
+                            period = 300;
+                            comptime = 60;
                             priority = 2;
                             type = STORE;
                             r_to_exe = (void*)store_datac;
                 break;
 
                 case SEND: 
-                            period = 5;
-                            comptime = 1;
+                            period = 500;
+                            comptime = 100;
                             priority = 3;
                             type = SEND;
                             r_to_exe = (void*)send_datac;
@@ -319,36 +319,33 @@ int existing_id(struct thread ths[], unsigned int active_th, int id){
 
 void read_datac(void* arg){
     unsigned int* id = (unsigned int*) arg;
-    clock_t start_time_print = clock();
-    clock_t end_time, start_time;
+    clock_t end_time, start_time, start_time_print;
     double elapsed_time, elapsed_time_print;
     int c = 0;
 
     struct timespec time, rem;
     time.tv_sec = 0;
-    time.tv_nsec = (long) (995 * 1000000); 
+    time.tv_nsec = (long) (97 * 1000000); 
     
+    start_time_print = start_time = clock();
+    // 200ms period
     while(!nanosleep(&time, NULL)){
-        // 20ms execution
-        start_time = clock();
+        // 100ms execution
         while (1) {
             end_time = clock();
             elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
             elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
 
-            // if (elapsed_time_print >= 1){
-            //     printf("Data sent : %d\n", c++);
-            //     start_time_print = end_time;  
-            // }
+            if (elapsed_time_print >= 1){
+                printf("Read task %d: %d\n", *id, c++);
+                start_time_print = end_time;  
+            }
             
             if (elapsed_time >= 1) {
-                printf("Read task %d: %d\n", *id, c++);
                 start_time = end_time;  
                 break;
             }
-
         }   
-        // nanosleep(&time, NULL);
     }
     free(id);
 }
@@ -356,70 +353,66 @@ void read_datac(void* arg){
 void store_datac(void* arg){
     unsigned int* id = (unsigned int*) arg;
 
-    clock_t start_time_print = clock();
-    clock_t end_time, start_time;
+    clock_t end_time, start_time, start_time_print;
     double elapsed_time, elapsed_time_print;
     int c = 0;
 
     struct timespec time, rem;
-    time.tv_sec = 1.7;
-    time.tv_nsec = (long) (0 * 1000000); 
+    time.tv_sec = 0;
+    time.tv_nsec = (long) (238 * 1000000); 
     
+    start_time_print = start_time = clock();
+    // 200ms period
     while(!nanosleep(&time, NULL)){
-        // 20ms execution
-        start_time = clock();
+        // 100ms execution
         while (1) {
             end_time = clock();
             elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
             elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
 
-            // if (elapsed_time_print >= 1){
-            //     printf("Data sent : %d\n", c++);
-            //     start_time_print = end_time;  
-            // }
-            
-            if (elapsed_time >= 1) {
+            if (elapsed_time_print >= 1){
                 printf("Store task %d: %d\n", *id, c++);
+                start_time_print = end_time;  
+            }
+            
+            if (elapsed_time >= 0.06) {
                 start_time = end_time;  
                 break;
             }
         }   
-        // nanosleep(&time, NULL);
     }
     free(id);
 }
 
 void send_datac(void* arg){
     unsigned int* id = (unsigned int*) arg;
-    clock_t start_time_print = clock();
-    clock_t end_time, start_time;
+    clock_t end_time, start_time, start_time_print;
     double elapsed_time, elapsed_time_print;
-    struct timespec time, rem;
     int c = 0;
 
-    while(1){
-        // 20ms execution
-        start_time = clock();
+    struct timespec time, rem;
+    time.tv_sec = 0;
+    time.tv_nsec = (long) (395 * 1000000); 
+    
+    start_time_print = start_time = clock();
+    // 500ms period
+    while(!nanosleep(&time, NULL)){
+        // 100ms execution
         while (1) {
             end_time = clock();
             elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
             elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
 
-            // if (elapsed_time_print >= 1){
-            //     printf("Data sent : %d\n", c++);
-            //     start_time_print = end_time;  
-            // }
-            
-            if (elapsed_time >= 1) {
+            if (elapsed_time_print >= 1){
                 printf("Send task %d: %d\n", *id, c++);
+                start_time_print = end_time;  
+            }
+            
+            if (elapsed_time >= 0.1) {
                 start_time = end_time;  
                 break;
             }
-
-        }
-        time.tv_sec = 4;
-        time.tv_nsec = (long) (0 * 1000000); 
-        nanosleep(&time, NULL);
+        }   
     }
     free(id);
 }

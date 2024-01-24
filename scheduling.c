@@ -10,6 +10,7 @@ int is_RM(struct thread* thrs, int n_threads){
     printf("Tot utilization %f in %d threads\n", tot_utilization, n_threads);
 
     // Compare with the threshold
+    if(tot_utilization > 1) return -1;
     if(n_threads > 10)
         return tot_utilization < log(2);
     else
@@ -31,10 +32,12 @@ void order_ths(struct thread* thrs, int n_threads){
 }
 
 int is_schedulable(struct thread* thrs, int n_threads){
-    if(is_RM(thrs, n_threads)) return 1;   // The task set respects the U_lub
+    int res = is_RM(thrs, n_threads); 
+    if(res == 1) return 1;    // The task set respects the U_lub
+    if(res == -1) return 0;     // The task set exceeds 1
 
-    order_ths(thrs, n_threads);            // Order priorities in descending order
-    int expired = 0;        // Flag to check if a deadline is not respected
+    order_ths(thrs, n_threads);             // Order priorities in descending order
+    int expired = 0;                        // Flag to check if a deadline is not respected
 
     int prev_respt, curr_respt;
     
@@ -49,8 +52,6 @@ int is_schedulable(struct thread* thrs, int n_threads){
         // Initialize variables
         curr_respt = thrs[i].info.comptime;            
         prev_respt = curr_respt-1;                          // Just to pass the next while
-
-        
 
         // Continue for (undefined) iterations
         int c = 0;                                       // Number of cycles (for debugging purposes)
