@@ -50,11 +50,10 @@ int send_data(int, char*);
 
 /*
     Listen for commands coming from a client already connected. It checks for all the possible errors that may happen
-    TODO aggiornare in out
     @param int socket
     @param int* represents the target routine
     @param int* represents the action (start/end)
-    @return int -1 on errors, -2 on wrong client command, -3 useless id
+    @return int -1 on errors, -2 no action required, -3 wrong command
 */
 int listen_for_commands(int sd, int* routine, int* action);
 

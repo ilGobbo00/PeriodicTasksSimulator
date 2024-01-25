@@ -29,7 +29,7 @@ enum{
 };
 static const char* ACTIONS[] = {"start", "end", "error"};
 
-// return value
+// return values
 enum{
     NONE = -2, 
     WRONG = -3
@@ -56,23 +56,14 @@ struct thread {
 };
 
 /*
-    Recursive function to find mcm
-
-    @param int index fist position of the array
-    @param int mcm first value 
-*/
-// int lcm(int, int);
-
-/*
-    Function to check if a set of task is schedulable using the boundary ln(2).
-    It works also with only one task active.
+    Function to check if a set of task is schedulable using the boundary ln(2) and 1.
 
     @return true if the set of task is schedulable for sure
 */
 int is_RM(struct thread*, int);
 
 /*
-    Function to check if the schedulability of the set of tasks
+    Function to check the schedulability of the set of tasks
 
     @param struct thread* array of thread(s)
     @param int number of threads

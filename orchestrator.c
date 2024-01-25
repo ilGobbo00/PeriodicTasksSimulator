@@ -65,9 +65,6 @@ int main(int argc, char *argv[]){
     int port, s_socket, c_socket;
     sscanf(argv[1], "%d", &port);
 
-    // TODO dopo aver catturato il EOF con il read, togliere togliere il comando per ignorare il segnale
-    // signal(SIGPIPE, SIG_IGN);
-
     char help[] = 
         "   <task> <'start'/'end'> <id bigger than 5>\n\n"
         "           available task: read\n"
@@ -84,8 +81,6 @@ int main(int argc, char *argv[]){
         return 1;
     }
     while(1){
-
-
 
         printf("[.] Listening for incoming connections..\n");
         if((c_socket = conn_listen(s_socket, port)) == -1){
@@ -114,7 +109,6 @@ int main(int argc, char *argv[]){
             routine = action = -1;
             ret_id = listen_for_commands(c_socket, &routine, &action);
 
-            // BUG  se il ret_id == .. allora la connessione é stata chiusa
             // read error
             if(ret_id == -1){
                 printf("[x] Command listen error\n");
@@ -173,9 +167,6 @@ int main(int argc, char *argv[]){
             // If there is enough room and the id is available, preapre for the analysis
             if(routine > CLOSE) memcpy(th_analysis, threads, MAX_THREADS * sizeof(struct thread));
             
-            
-            
-
             // routine and actions are correct (no further checks need to be done)
             switch(routine){
                 case CLOSE: 
@@ -253,7 +244,6 @@ int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsi
 
     if(existing_id(threads, *active_threads, id)){
         printf("[x] Already existing id\n");
-        // send_data(s, "ID already existing");
         return -3;
     }
 
@@ -262,7 +252,6 @@ int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsi
 
     if(!is_schedulable(th_analysis, (*active_threads)+1)){
         printf("[x] Non schedulable thread\n");
-        // send_data(s, "Function not started - not schedulable thread");
         return -2;
     }
 
@@ -272,7 +261,6 @@ int start_thread(int s, struct thread* threads, struct thread* th_analysis, unsi
     if(pthread_create(new_th.thread, NULL, function, p_id)){
         printf("[x] Error while creating a new thread\n");
         free(new_th.thread);
-        // send_data(s, "Function not started - error while creating a new thread");
         return -1;
     }
 
@@ -292,7 +280,6 @@ int close_thread(int s, struct thread* threads, unsigned int* active_threads, in
 
     if(pthread_cancel(*threads[j].thread)){
         printf("[!] It was not possible to stop the thread\n");
-        // send_data(s, "Function not stopped - thread was not stopped due to an error");
         return -1;
     }
 
@@ -305,7 +292,6 @@ int close_thread(int s, struct thread* threads, unsigned int* active_threads, in
     (*active_threads)--;
 
     printf("[+] Thread correctly stopped\n");
-    // send_data(s, "Function correclty stopped");
 
     return 0;
 }
@@ -362,9 +348,9 @@ void store_datac(void* arg){
     time.tv_nsec = (long) (238 * 1000000); 
     
     start_time_print = start_time = clock();
-    // 200ms period
+    // 300ms period
     while(!nanosleep(&time, NULL)){
-        // 100ms execution
+        // 60ms execution
         while (1) {
             end_time = clock();
             elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;

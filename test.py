@@ -26,7 +26,7 @@ def run_task_and_get_times(executable):
     return extract_times(result.stderr)
 
 def main():
-    executable = 'task_three'
+    executable = 'task_one'
     num_executions = 10
     total_cpu_time = 0
     total_real_time = 0

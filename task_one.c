@@ -16,30 +16,32 @@ int main() {
     double elapsed_time, elapsed_time_print;
     int c = 0;
 
-    while(c < 1){
+    struct timespec time, rem;
+    time.tv_sec = 0;
+    time.tv_nsec = (long) (395 * 1000000); 
+    
+    start_time_print = start_time = clock();
+        // start_time = clock();
+    while(!c /* !nanosleep(&time, NULL) */){
         // 20ms execution
-        start_time = clock();
         while (1) {
             end_time = clock();
             elapsed_time = ((double)(end_time - start_time)) / CLOCKS_PER_SEC;
+            
             elapsed_time_print = ((double)(end_time - start_time_print)) / CLOCKS_PER_SEC;
 
             // if (elapsed_time_print >= 1){
-            //     printf("Data sent : %d\n", c++);
+            //     printf("Read: %d\n", c++);
             //     start_time_print = end_time;  
             // }
             
-            if (elapsed_time >= 1) {
-                printf("Data sent : %d\n", c++);
+            if (elapsed_time >= 0.1) {
+                printf("Read task: %d\n", c++);
                 start_time = end_time;  
                 break;
             }
 
-        }
-
-        struct timespec time, rem;
-        time.tv_sec = 4;
-        time.tv_nsec = (long) (0 * 1000000); 
+        }   
         nanosleep(&time, NULL);
     }
 
