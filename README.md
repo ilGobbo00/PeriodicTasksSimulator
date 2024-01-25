@@ -26,9 +26,9 @@ The following threads have been created and analyzed:
 | SEND                  | 200           | 10                    | 1                         | 
 
 ## Time Analyses
-For the time analyses, the `time` command (Linux) has been used, and to obtain a mean value, the [Python script](https://github.com/ilGobbo00/repo/test.py) has been executed once for each task.
+For the time analyses, the `time` command (Linux) has been used, and to obtain a mean value, the [Python script](https://github.com/ilGobbo00/PeriodicTasksSimulator/blob/master/test.py) has been executed once for each task.
 
-To check the correctness of the main program, some manual checks have been performed and are documented in the [info file](https://github.com/ilGobbo00/repo/info%20th).
+To check the correctness of the main program, some manual checks have been performed and are documented in the [info file](https://github.com/ilGobbo00/PeriodicTasksSimulator/blob/master/info%20th).
 
 ## Usage
 Compile the project using `make` and execute the following commands on two different terminals: 
