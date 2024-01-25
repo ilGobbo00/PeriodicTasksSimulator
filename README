@@ -1,0 +1,39 @@
+
+# Response time analisis for concurrent threads
+
+Project for the "Concurrent and real time programming" course at the [University of Padua](https://unipd.it). 
+
+Main goal of the assignment: 
+```
+Simulation of dynamic periodic task execution. A pre-defined set of routines (with unique 
+assigned name) shall be defined in advance with given processor usage, period and deadline. 
+Every routine shall be composed of a program loop followed by a nanosleep() call. The exact 
+amount of CPU time and consequently of the processor utilization can be done in advance 
+using the time Linux command. The execution supervisor shall listen in TCP/IP for requests 
+for task activation/deactivation. The received message shall specify the name of the task to 
+be activated. A given task can be activated multiple times, starting every time a new thread 
+running the selected routine. Before accepting a request for a new task, a response time 
+analysis shall be carried out in order to assess the schedulability of the system.
+```
+
+## Threads
+
+The following threads have been created and analyzed:
+
+| Thread Name           | Period [ms]   | Computation Time [ms] | Priority (1 = highest)    |
+| -----------------     | -----------   | -----------           | ---------                 |
+| READ                  | 500           | 10                    | 1                         | 
+| STORE                 | 300           | 6                     | 1                         | 
+| SEND                  | 200           | 10                    | 1                         | 
+
+## Time Analyses
+For the time analyses, the command ` time ` (Linux) has been used and to have a mean value the [python script](https://github.com/ilGobbo00/repo/test.py) has been executed one time for each task.
+
+To check the correctness of the main program, some manual checks have been done and have been written in the [info file](https://github.com/ilGobbo00/repo/info%20th) 
+
+## Usage
+Compile the project using `make` and execute the following commands on two different terminals: 
+- `./orchestrator <port>`
+- `./client <port>`
+
+One the connection is enstablished, launch or stop the threads with the command `<thread> <'start'/'end'> <id>`.
