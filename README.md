@@ -22,8 +22,8 @@ The following threads have been created and analyzed:
 | Thread Name           | Period [ms]   | Computation Time [ms] | Priority (1 = highest)    |
 | -----------------     | -----------   | -----------           | ---------                 |
 | READ                  | 500           | 10                    | 1                         | 
-| STORE                 | 300           | 6                     | 1                         | 
-| SEND                  | 200           | 10                    | 1                         | 
+| STORE                 | 300           | 6                     | 2                         | 
+| SEND                  | 200           | 10                    | 3                         | 
 
 ## Time Analyses
 For the time analyses, the `time` command (Linux) has been used, and to obtain a mean value, the [Python script](https://github.com/ilGobbo00/PeriodicTasksSimulator/blob/master/test.py) has been executed once for each task.
